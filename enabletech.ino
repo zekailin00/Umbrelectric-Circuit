@@ -16,7 +16,7 @@ const int revolutionsToOpen = 1;
 const int stepperSpeed = 60;
 const int switch1Port = 7; // power
 const int switch2Port = A0; // servo
-const int switch3Port = A1; // stepper
+const int switch3Port = A5; // stepper
 
 Servo myservo;  // create servo object to control a servo
 Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
