@@ -26,6 +26,9 @@ int pos = 0;    // variable to store the servo position
 void setup() {
   myStepper.setSpeed(stepperSpeed);
   myservo.attach(6);  // attaches the servo on pin 9 to the servo object
+  pinMode(switch1Port, INPUT);
+  pinMode(switch2Port, INPUT);
+  pinMode(switch3Port, INPUT);
   Serial.begin(9600);
   if(EEPROM.read(0) != 1) {
     EEPROM.write(0, 1); // "program setup has run" flag
@@ -36,7 +39,7 @@ void setup() {
 }
 
 bool is_switched(int pin) {
-  return analogRead(pin) > 1000;
+  return analogRead(pin) == HIGH;
 }
 
 void loop() {
