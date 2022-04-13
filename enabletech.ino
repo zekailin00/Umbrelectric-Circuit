@@ -1,93 +1,104 @@
-// Based on:
-/* Sweep
- by BARRAGAN <http://barraganstudio.com>
- This example code is in the public domain.
- modified 8 Nov 2013
- by Scott Fitzgerald
- http://www.arduino.cc/en/Tutorial/Sweep
-*/
-
 #include <EEPROM.h>
 #include <Servo.h>
 #include <Stepper.h>
 
-const int stepsPerRevolution = 200;
-const int revolutionsToOpen = 1;
-const int stepToOpen = 200;
-const int stepperSpeed = 60;
-const int servoPort = 6;
-const int servoSwitchPort = 2;
-const int stepperSwitchPort = 3;
+
+const int STEP_PER_REVOLUTION = 200;
+const int REVOLUTIONS_TO_OPEN = 1;
+const int STEPS_TO_OPEN = REVOLUTIONS_TO_OPEN * STEP_PER_REVOLUTION;
+const int STEPPER_SPEED = 60;
+const int SERVO_PORT = 6;
+const int SERVO_SWITCH_PORT = 2;
+const int STEPPER_SWITCH_PORT = 3;
+
 
 Servo servo;
-Stepper stepper(stepsPerRevolution, 8, 9, 10, 11);
+Stepper stepper(STEP_PER_REVOLUTION, 8, 9, 10, 11);
+
 
 bool isSwitched(int pin) {
   return digitalRead(pin) == HIGH;
 }
 
+
 bool hasRun() {
   return EEPROM.read(0) == 1;
 }
+
+
+void setupMemory() {
+  EEPROM.write(0, 1); // "program setup has run" flag
+  EEPROM.write(1, 0); // clamp
+  setSteps(0);
+}
+
 
 bool isClampOpen() {
   return EEPROM.read(1) == 1;
 }
 
+
+void closeClamp() {
+  servo.write(90);
+  EEPROM.write(1, 0);
+}
+
+
+void openClamp() {
+  servo.write(0);
+  EEPROM.write(1, 1);
+}
+
+
 int getSteps() {
   return EEPROM.read(2);
 }
+
 
 void setSteps(int steps) {
   EEPROM.write(2, steps);
 }
 
-void setup() {
-  servo.attach(servoPort);
-  pinMode(servoSwitchPort, INPUT);
-  pinMode(stepperSwitchPort, INPUT);
 
-  stepper.setSpeed(stepperSpeed);
+void setup() {
+  pinMode(SERVO_SWITCH_PORT, INPUT);
+  pinMode(STEPPER_SWITCH_PORT, INPUT);
+
+  servo.attach(SERVO_PORT);
+  stepper.setSpeed(STEPPER_SPEED);
 
   if (!hasRun()) {
-    EEPROM.write(0, 1); // "program setup has run" flag
-    EEPROM.write(1, 0); // clamp
-    setSteps(0); // steps
+    setupMemory();
   }
 
-  setSteps(0);
   Serial.begin(9600);
 }
 
-void loop() {
-  // this program controls 3 switches:
-  // - switch #1 opens and closes the clamp
-  // - switch #2 extends and closes the umbrella
-  // - switch #3 is the emergency stop
 
-  // TODO: figure out a way to emergency stop that powers off the arduino (remember that the functions being used are blocking)
-  
-  if (isSwitched(servoSwitchPort) && !isClampOpen()) {
-    servo.write(0);
-    EEPROM.write(1, 1); // set the clamp state to open
+void loop() {  
+  if (isSwitched(SERVO_SWITCH_PORT) && !isClampOpen()) {
+    openClamp();
+    Serial.println("open");
   }
 
-  if (!isSwitched(servoSwitchPort) && isClampOpen()) {
-    servo.write(90);
-    EEPROM.write(1, 0); // set the clamp state to closed
+  if (!isSwitched(SERVO_SWITCH_PORT) && isClampOpen()) {
+    closeClamp();
+    Serial.println("close");
   }
   
-  if (isSwitched(stepperSwitchPort)) {
-    for (int steps = getSteps(); steps < stepToOpen; steps++) {
-      stepper.step(+1);
-      setSteps(steps + 1);
-    }
+  if (isSwitched(STEPPER_SWITCH_PORT)) {
+//    for (int steps = getSteps(); steps < STEPS_TO_OPEN; steps++) {
+     stepper.step(+1);
+//      setSteps(steps + 1);
+//      Serial.println(steps);
+//    }
   }
   
-  if (!isSwitched(stepperSwitchPort)) {
-    for (int steps = getSteps(); steps > 0; steps--) {
-      stepper.step(-1);
-      setSteps(steps - 1);
-    }
+  if (!isSwitched(STEPPER_SWITCH_PORT)) {
+//    for (int steps = getSteps(); steps > 0; steps--) {
+     stepper.step(-1);
+//      setSteps(steps - 1);
+//      Serial.println(steps);
+//    }
   }
 }
